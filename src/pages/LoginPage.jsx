@@ -1,84 +1,73 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { login } from '../app/api/auth/index.js';
+import Button from '../component/ui/button.jsx';
+import Input from '../component/ui/input.jsx';
+import { useAppStore } from '../app/store.jsx';
 
 function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [message, setMessage] = useState('')
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState(null);
 
-  function handleSubmit(event) {
-    event.preventDefault()
-    if (!email || !password) {
-      setMessage('Enter your email and password to continue.')
-      return
-    }
-    setMessage('You are signed in. Welcome back.')
-  }
+    const { setUser } = useAppStore();
+    const navigate = useNavigate();
 
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-sm rounded-lg bg-white p-8 shadow-md">
-        <h1 className="mb-6 text-center text-2xl font-semibold text-gray-900">
-          Sign in to your account
-        </h1>
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError(null);
+        try {
+            const data = await login({email,password});
+            localStorage.setItem('token', data.token)
+            setUser(data.user);
+            navigate('/users')
+            const payload = JSON.parse(atob(data.token.split('.')[1]));
+            if (payload.role === 'admin'){
+                navigate('/users')
+            }else{
+              navigate("/");
+            }
+        }
+        catch(error){
+            setError(error.message)
+        }
+    };
 
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-          <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
-              Email address
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-blue-500 to-purple-600">
+            <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">Login</h2>
 
-          <div>
-            <div className="mb-1 flex items-center justify-between">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <a href="#forgot-password" className="text-sm text-blue-600 hover:underline">
-                Forgot password?
-              </a>
+                <form className="space-y-4" onSubmit={handleSubmit}>
+                    <Input
+                        label="Email"
+                        type="email"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+
+                    <Input
+                        label="Password"
+                        type="password"
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+
+                    {error && <p className="text-red-500 text-sm">{error}</p>}
+
+                    <Button className="w-full" type="submit" disabled={!email || !password}>
+                        Login
+                    </Button>
+                </form>
+
+                <p className="mt-4 text-center text-gray-600">
+                    Don't have an account? <a href="/signup" className="text-blue-500 hover:underline">Sign up</a>
+                </p>
             </div>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full rounded-md bg-blue-600 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-          >
-            Sign in
-          </button>
-
-          {message && <p className="text-center text-sm text-blue-600">{message}</p>}
-        </form>
-
-        <p className="mt-4 text-center text-sm text-gray-600">
-          New here?{' '}
-          <Link to="/signup" className="font-medium text-blue-600 hover:underline">
-            Create an account
-          </Link>
-        </p>
-      </div>
-    </main>
-  )
+        </div>
+    );
 }
 
-export default LoginPage
+export default LoginPage;
