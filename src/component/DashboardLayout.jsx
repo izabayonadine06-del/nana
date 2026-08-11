@@ -1,4 +1,4 @@
-import SideBar from "./SideBar"
+import SideBar from "./sidebar.jsx"
 function DashboardLayout({children}) {
   return (
     <div className="flex min-h-screen bg-secondary-50">
